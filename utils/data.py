@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from torchvision import datasets, transforms
 from utils.toolkit import split_images_labels
@@ -105,14 +106,23 @@ class iCIFAR224(iData):
     class_order = np.arange(100).tolist()
 
     def download_data(self):
-        train_dataset = datasets.cifar.CIFAR100("./data", train=True, download=True)
-        test_dataset = datasets.cifar.CIFAR100("./data", train=False, download=True)
-        self.train_data, self.train_targets = train_dataset.data, np.array(
-            train_dataset.targets
-        )
-        self.test_data, self.test_targets = test_dataset.data, np.array(
-            test_dataset.targets
-        )
+        train_dir = "./data/CIFAR100/train/"
+        test_dir = "./data/CIFAR100/test/"
+        if os.path.exists(train_dir) and os.path.exists(test_dir):
+            self.use_path = True
+            train_dset = datasets.ImageFolder(train_dir)
+            test_dset = datasets.ImageFolder(test_dir)
+            self.train_data, self.train_targets = split_images_labels(train_dset.imgs)
+            self.test_data, self.test_targets = split_images_labels(test_dset.imgs)
+        else:
+            train_dataset = datasets.cifar.CIFAR100("./data", train=True, download=True)
+            test_dataset = datasets.cifar.CIFAR100("./data", train=False, download=True)
+            self.train_data, self.train_targets = train_dataset.data, np.array(
+                train_dataset.targets
+            )
+            self.test_data, self.test_targets = test_dataset.data, np.array(
+                test_dataset.targets
+            )
 
 class iImageNet1000(iData):
     use_path = True
@@ -228,8 +238,8 @@ class CUB(iData):
 
     def download_data(self):
         # assert 0, "You should specify the folder of your dataset"
-        train_dir = "./data/cub/train/"
-        test_dir = "./data/cub/test/"
+        train_dir = "./data/CUB200/train/" if os.path.exists("./data/CUB200/train/") else "./data/cub/train/"
+        test_dir = "./data/CUB200/test/" if os.path.exists("./data/CUB200/test/") else "./data/cub/test/"
 
         train_dset = datasets.ImageFolder(train_dir)
         test_dset = datasets.ImageFolder(test_dir)

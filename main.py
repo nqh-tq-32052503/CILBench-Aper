@@ -7,6 +7,13 @@ def main():
     param = load_json(args.config)
     args = vars(args)  # Converting argparse Namespace to a dict.
     args.update(param)  # Add parameters from json
+
+    # Fixed parameters across all experiments as requested
+    args["tuned_epoch"] = 20
+    args["optimizer"] = "sgd"
+    args["init_lr"] = 0.05
+    args["batch_size"] = 32
+
     train(args)
 
 def load_json(settings_path):
