@@ -45,8 +45,8 @@ class Learner(BaseLearner):
         with torch.no_grad():
             for i, batch in enumerate(trainloader):
                 (_,data,label)=batch
-                data=data.cuda()
-                label=label.cuda()
+                data=data.to(self._device)
+                label=label.to(self._device)
                 embedding = model(data)['features']
                 embedding_list.append(embedding.cpu())
                 label_list.append(label.cpu())

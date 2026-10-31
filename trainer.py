@@ -109,7 +109,7 @@ def _set_device(args):
     gpus = []
 
     for device in device_type:
-        if device_type == -1:
+        if str(device) == "-1" or device == -1:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda:{}".format(device))
@@ -117,6 +117,8 @@ def _set_device(args):
         gpus.append(device)
 
     args["device"] = gpus
+    if len(gpus) > 0 and gpus[0].type == "cuda":
+        torch.cuda.set_device(gpus[0])
 
 
 def _set_random():

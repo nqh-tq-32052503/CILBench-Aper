@@ -58,7 +58,8 @@ Phương pháp **Aper (AdaPt and mERge)** được thiết kế theo quy trình 
 
 > [!CAUTION]
 > **Cảnh báo tính tương thích phiên bản thư viện:**
-> Repo phụ thuộc trực tiếp vào các hàm nội bộ của `timm` cũ (`timm.models.helpers` bao gồm `to_2tuple`, `resolve_pretrained_cfg`, `build_model_with_cfg`). Nếu cài `timm >= 0.9` hoặc `timm 1.0`, chương trình sẽ báo lỗi `ModuleNotFoundError: No module named 'timm.models.layers.helpers'`. Cần tuân thủ đúng phiên bản bên dưới.
+> 1. **NumPy < 2.0 (BẮT BUỘC):** PyTorch 1.11.0 được biên dịch với NumPy 1.x C-API. Nếu môi trường cài `numpy >= 2.0` (ví dụ `numpy 2.0.2`), PyTorch sẽ báo lỗi `UserWarning: Failed to initialize NumPy: _ARRAY_API not found` và văng lỗi `RuntimeError: Numpy is not available` khi timm nạp pretrained weights của ViT. Bắt buộc phải hạ cấp NumPy: `pip install "numpy<2"`.
+> 2. **timm cũ:** Repo phụ thuộc trực tiếp vào các hàm nội bộ của `timm` cũ (`timm.models.helpers` bao gồm `to_2tuple`, `resolve_pretrained_cfg`, `build_model_with_cfg`). Nếu cài `timm >= 0.9` hoặc `timm 1.0`, chương trình sẽ báo lỗi `ModuleNotFoundError: No module named 'timm.models.layers.helpers'`. Cần tuân thủ đúng phiên bản `timm==0.6.12`.
 
 ### Bước 3.1: Tạo Conda Environment
 ```bash
@@ -66,23 +67,37 @@ conda create -n aper python=3.9 -y
 conda activate aper
 ```
 
-### Bước 3.2: Cài đặt PyTorch và CUDA
-Khuyến nghị sử dụng PyTorch 1.11.0:
+### Bước 3.2: Cài đặt PyTorch và CUDA (LƯU Ý THEO DÒNG GPU)
 
-- **Với CUDA 11.3 (qua Conda):**
-  ```bash
-  conda install pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch -y
-  ```
+Cài đặt phiên bản PyTorch phù hợp với dòng card đồ họa của bạn:
 
-- **Hoặc qua Wheel Pip (nhanh và tương thích tốt từ CUDA 11.3 đến 11.8):**
+#### Lựa chọn A: Dành cho GPU thế hệ mới H100, H200 (`sm_90`), RTX 4090, L40, L4 (`sm_89`) [KHUYẾN NGHỊ CHO SERVER HIỆN NAY]
+> [!IMPORTANT]
+> Các GPU đời mới như **NVIDIA H100 / H200** (kiến trúc Hopper, `sm_90`) và **RTX 4090 / L40** (`sm_89`) **KHÔNG** tương thích với PyTorch 1.11 (sẽ văng lỗi `cuDNN error: CUDNN_STATUS_NOT_INITIALIZED` do thiếu kernel). Bạn **bắt buộc** phải sử dụng PyTorch 2.x với CUDA 12.1:
+
+```bash
+pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cu121
+```
+*(Hoặc bản PyTorch 2.1.2: `pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu121`)*
+
+#### Lựa chọn B: Dành cho GPU thế hệ trước (A100, V100, RTX 3090, T4)
+- **Qua Wheel Pip:**
   ```bash
   pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+  ```
+- **Hoặc qua Conda:**
+  ```bash
+  conda install pytorch==1.11.0 torchvision==0.12.0 cudatoolkit=11.3 -c pytorch -y
   ```
 
 ### Bước 3.3: Cài đặt Dependencies
 File `requirements.txt` đã được cấu hình trong thư mục gốc:
 ```bash
-pip install timm==0.6.12 easydict scipy tqdm Pillow numpy
+pip install timm==0.6.12 easydict scipy tqdm Pillow "numpy<2"
+```
+Hoặc cài trực tiếp từ file:
+```bash
+pip install -r requirements.txt
 ```
 
 ---

@@ -5,4 +5,4 @@ easydict
 scipy
 tqdm
 Pillow
-numpy
+numpy<2

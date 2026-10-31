@@ -48,8 +48,8 @@ class Learner(BaseLearner):
             for i, batch in enumerate(trainloader):
                 # data, label = [_.cuda() for _ in batch]
                 (_, data, label) = batch
-                data = data.cuda()
-                label = label.cuda()
+                data = data.to(self._device)
+                label = label.to(self._device)
                 # model.module.mode = 'encoder'
                 embedding = model(data)['features']
                 embedding_list.append(embedding.cpu())
@@ -71,7 +71,7 @@ class Learner(BaseLearner):
 
     def update_fc(self, dataloader, class_list, session):
         for batch in dataloader:
-            data, label = [_.cuda() for _ in batch]
+            data, label = [_.to(self._device) for _ in batch]
             data = self.encode(data).detach()
         new_fc = self.update_fc_avg(data, label, class_list)
 
