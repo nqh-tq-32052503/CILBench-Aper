@@ -11,9 +11,10 @@ Tài liệu này cung cấp hướng dẫn toàn diện từ mã nguồn chính 
 3. [Cài Đặt Môi Trường Conda & Yêu Cầu Kỹ Thuật](#3-cài-đặt-môi-trường-conda--yêu-cầu-kỹ-thuật)
 4. [Cấu Trúc & Tích Hợp 4 Tập Dữ Liệu Trong Thư Mục data/](#4-cấu-trúc--tích-hợp-4-tập-dữ-liệu-trong-thư-mục-data)
 5. [Quy Tắc Cấu Hình Số Lượng Tasks (num_tasks)](#5-quy-tắc-cấu-hình-số-lượng-tasks-num_tasks)
-6. [Mẫu Cấu Hình JSON Cho Từng Biến Thể](#6-mẫu-cấu-hình-json-cho-từng-biến-thể)
-7. [Hướng Dẫn Thực Thi & Phân Tích Kết Quả Log](#7-hướng-dẫn-thực-thi--phân-tích-kết-quả-log)
-8. [Script Tự Động Hóa Chạy Hàng Loạt (Bash Script)](#8-script-tự-động-hóa-chạy-hàng-loạt-bash-script)
+6. [Mẫu Cấu Hình JSON Từng Biến Thể (exps/)](#6-mẫu-cấu-hình-json-từng-biến-thể-exps)
+7. [Bộ Cấu Hình Tái Lập Chuẩn Hóa Tiện Lợi (scenarios/)](#7-bộ-cấu-hình-tái-lập-chuẩn-hóa-tiện-lợi-scenarios)
+8. [Hướng Dẫn Thực Thi & Phân Tích Kết Quả Log](#8-hướng-dẫn-thực-thi--phân-tích-kết-quả-log)
+9. [Script Tự Động Hóa Chạy Hàng Loạt (Bash Script)](#9-script-tự-động-hóa-chạy-hàng-loạt-bash-script)
 
 ---
 
@@ -146,7 +147,7 @@ $$T = 1 + \left\lceil \frac{C_{\text{total}} - init\_cls}{increment} \right\rcei
 
 ---
 
-## 6. Mẫu Cấu Hình JSON Cho Từng Biến Thể
+## 6. Mẫu Cấu Hình JSON Từng Biến Thể (exps/)
 
 > [!IMPORTANT]
 > **Các cấu hình đã được CỐ ĐỊNH (FIXED) cho mọi experiment:**
@@ -279,9 +280,136 @@ File ví dụ: `exps/aper_ssf/custom_run.json`
 
 ---
 
-## 7. Hướng Dẫn Thực Thi & Phân Tích Kết Quả Log
+## 7. Bộ Cấu Hình Tái Lập Chuẩn Hóa Tiện Lợi (scenarios/)
 
-### 7.1. Lệnh Khởi Chạy
+Để phục vụ mục đích **tái lập thực nghiệm (Reproduce)** một cách tiện lợi và tối giản nhất, thư mục `scenarios/` cung cấp sẵn các file cấu hình gộp. Mỗi file đại diện cho một kịch bản hoàn chỉnh, tích hợp sẵn **toàn bộ 5 biến thể của Aper** và thực thi trên **3 seeds ngẫu nhiên** (`0`, `1`, `2`):
+
+### 7.1. Danh Mục 6 Kịch Bản Thực Nghiệm
+
+| STT | Kịch bản thực nghiệm | Tập dữ liệu | Số Tasks & Số Lớp | File cấu hình trong `scenarios/` | File alias ngắn gọn |
+| :---: | :--- | :--- | :--- | :--- | :--- |
+| **1** | CIFAR-100 (10 tasks) | CIFAR-100 (`cifar224`) | 10 tasks, mỗi task 10 lớp | `scenarios/cifar100_10tasks_10cls.json` | `scenarios/cifar100_10_10.json` |
+| **2** | CUB-200 (10 tasks) | CUB-200 (`cub`) | 10 tasks, mỗi task 20 lớp | `scenarios/cub200_10tasks_20cls.json` | `scenarios/cub200_10_20.json` |
+| **3** | ImageNet-R (10 tasks) | ImageNet-R (`imagenetr`) | 10 tasks, mỗi task 20 lớp | `scenarios/imagenetr_10tasks_20cls.json` | `scenarios/imagenetr_10_20.json` |
+| **4** | ImageNet-A (10 tasks) | ImageNet-A (`imageneta`) | 10 tasks, mỗi task 20 lớp | `scenarios/imageneta_10tasks_20cls.json` | `scenarios/imageneta_10_20.json` |
+| **5** | ImageNet-R (20 tasks) | ImageNet-R (`imagenetr`) | 20 tasks, mỗi task 10 lớp | `scenarios/imagenetr_20tasks_10cls.json` | `scenarios/imagenetr_20_10.json` |
+| **6** | ImageNet-R (40 tasks) | ImageNet-R (`imagenetr`) | 40 tasks, mỗi task 5 lớp | `scenarios/imagenetr_40tasks_5cls.json` | `scenarios/imagenetr_40_5.json` |
+
+### 7.2. Cấu Trúc File Cấu Hình Kịch Bản (Scenario JSON)
+Mỗi file JSON gom các thiết lập chung (tập dữ liệu, quy cách chia task, danh sách seeds, bộ nhớ replay) và khai báo danh sách 5 biến thể của Aper trong trường `"models"`:
+1. `aper_finetune` (Full fine-tuning ViT)
+2. `aper_vpt` shallow (Visual Prompt Tuning ở Layer 0, 5 tokens)
+3. `aper_vpt` deep (Visual Prompt Tuning ở cả 12 Layers, 5 tokens)
+4. `aper_adapter` (AdaptFormer ViT, `ffn_num=64`)
+5. `aper_ssf` (Scale & Shift Features, `ffn_num=64`)
+
+Ví dụ nội dung file `scenarios/cifar100_10_10.json`:
+```json
+{
+    "scenario_name": "cifar100_10tasks_10cls",
+    "dataset": "cifar224",
+    "shuffle": true,
+    "init_cls": 10,
+    "increment": 10,
+    "memory_size": 2000,
+    "memory_per_class": 20,
+    "fixed_memory": false,
+    "device": ["0"],
+    "seed": [0, 1, 2],
+    "models": [
+        {
+            "model_name": "aper_finetune",
+            "prefix": "exp_finetune",
+            "convnet_type": "pretrained_vit_b16_224_in21k",
+            "weight_decay": 0.0005,
+            "min_lr": 0
+        },
+        {
+            "model_name": "aper_vpt",
+            "prefix": "exp_vpt-shallow",
+            "convnet_type": "pretrained_vit_b16_224_in21k_vpt",
+            "vpt_type": "shallow",
+            "prompt_token_num": 5,
+            "weight_decay": 0.0005,
+            "min_lr": 0
+        },
+        {
+            "model_name": "aper_vpt",
+            "prefix": "exp_vpt-deep",
+            "convnet_type": "pretrained_vit_b16_224_in21k_vpt",
+            "vpt_type": "deep",
+            "prompt_token_num": 5,
+            "weight_decay": 0.0005,
+            "min_lr": 0
+        },
+        {
+            "model_name": "aper_adapter",
+            "prefix": "exp_adapter",
+            "convnet_type": "pretrained_vit_b16_224_in21k_adapter",
+            "prompt_token_num": 30,
+            "ffn_num": 64,
+            "weight_decay": 0.0005,
+            "min_lr": 0
+        },
+        {
+            "model_name": "aper_ssf",
+            "prefix": "exp_ssf",
+            "convnet_type": "pretrained_vit_b16_224_in21k_ssf",
+            "prompt_token_num": 30,
+            "ffn_num": 64,
+            "weight_decay": 0.0005,
+            "min_lr": 0
+        }
+    ]
+}
+```
+
+### 7.3. Hướng Dẫn Chạy Một Lệnh Duy Nhất (Single Command)
+
+Chỉ với 1 lệnh, hệ thống sẽ tự động chạy toàn bộ **5 biến thể Aper $\times$ 3 seeds = 15 thực nghiệm**:
+```bash
+# Tái lập kịch bản CIFAR-100 (10 tasks, 10 classes)
+python main.py --config scenarios/cifar100_10_10.json
+
+# Tái lập kịch bản CUB-200 (10 tasks, 20 classes)
+python main.py --config scenarios/cub200_10_20.json
+
+# Tái lập kịch bản ImageNet-R (10 tasks, 20 classes)
+python main.py --config scenarios/imagenetr_10_20.json
+
+# Tái lập kịch bản ImageNet-A (10 tasks, 20 classes)
+python main.py --config scenarios/imageneta_10_20.json
+
+# Tái lập kịch bản ImageNet-R (20 tasks, 10 classes)
+python main.py --config scenarios/imagenetr_20_10.json
+
+# Tái lập kịch bản ImageNet-R (40 tasks, 5 classes)
+python main.py --config scenarios/imagenetr_40_5.json
+```
+
+### 7.4. Các Tham Số Dòng Lệnh Nâng Cao (Tùy Chọn)
+- **Chỉ định GPU trực tiếp:** Thêm `--device <id>` (ví dụ `--device 0` hoặc `--device 1`) để ghi đè GPU mà không cần sửa file JSON:
+  ```bash
+  python main.py --config scenarios/imagenetr_10_20.json --device 0
+  ```
+- **Lọc chạy riêng 1 biến thể cụ thể:** Thêm `--model <tên_model_hoặc_prefix>`:
+  ```bash
+  # Chỉ chạy Aper-SSF trên cả 3 seeds
+  python main.py --config scenarios/imagenetr_10_20.json --model aper_ssf
+
+  # Chỉ chạy Aper-VPT-Deep trên cả 3 seeds
+  python main.py --config scenarios/imagenetr_10_20.json --model exp_vpt-deep
+  ```
+- **Tùy chỉnh danh sách seeds:** Thêm `--seed <seed1,seed2,...>`:
+  ```bash
+  python main.py --config scenarios/cifar100_10_10.json --seed 0,1,2
+  ```
+
+---
+
+## 8. Hướng Dẫn Thực Thi & Phân Tích Kết Quả Log
+
+### 8.1. Lệnh Khởi Chạy Cho File Đơn Lẻ (exps/)
 Chạy qua file `main.py` với đối số `--config`:
 ```bash
 python main.py --config ./exps/aper_adapter/cifar224_5_5_vit-b_adapter.json
@@ -292,7 +420,7 @@ python main.py --config ./exps/aper_adapter/cifar224_5_5_vit-b_adapter.json
 CUDA_VISIBLE_DEVICES=0 python main.py --config ./exps/aper_ssf/imagenetr_5_5_vit-b_ssf.json
 ```
 
-### 7.2. Phân Tích Kết Quả Log
+### 8.2. Phân Tích Kết Quả Log
 Log thực thi được tự động lưu theo cấu trúc thư mục:
 `logs/{model_name}/{dataset}/{init_cls}/{increment}/{prefix}_{seed}_{convnet_type}.log`
 
@@ -309,7 +437,7 @@ Ví dụ một đoạn log chuẩn khi hoàn thành 1 task:
 
 ---
 
-## 8. Script Tự Động Hóa Chạy Hàng Loạt (Bash Script)
+## 9. Script Tự Động Hóa Chạy Hàng Loạt (Bash Script)
 
 Tạo file `run_experiments.sh` tại thư mục gốc để tự động chạy cả 5 biến thể trên tập dữ liệu mong muốn:
 
