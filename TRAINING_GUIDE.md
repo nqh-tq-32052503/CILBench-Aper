@@ -15,6 +15,7 @@ Tài liệu này cung cấp hướng dẫn toàn diện từ mã nguồn chính 
 7. [Bộ Cấu Hình Tái Lập Chuẩn Hóa Tiện Lợi (scenarios/)](#7-bộ-cấu-hình-tái-lập-chuẩn-hóa-tiện-lợi-scenarios)
 8. [Hướng Dẫn Thực Thi & Phân Tích Kết Quả Log](#8-hướng-dẫn-thực-thi--phân-tích-kết-quả-log)
 9. [Script Tự Động Hóa Chạy Hàng Loạt (Bash Script)](#9-script-tự-động-hóa-chạy-hàng-loạt-bash-script)
+10. [Tổng Hợp Kết Quả Thực Nghiệm Ra File Excel (results.xlsx)](#10-tổng-hợp-kết-quả-thực-nghiệm-ra-file-excel-resultsxlsx)
 
 ---
 
@@ -510,3 +511,33 @@ Theo dõi tiến trình chạy trực tiếp:
 ```bash
 tail -f run_experiments.log
 ```
+
+---
+
+## 10. Tổng Hợp Kết Quả Thực Nghiệm Ra File Excel (results.xlsx)
+
+Sau khi hoàn tất quá trình huấn luyện các kịch bản thực nghiệm, file script [generate_results.py](file:///home/pc/CILBench-Aper/generate_results.py) được cung cấp để tự động đọc, phân tích các file log trong thư mục `training_logs/` và trích xuất dữ liệu vào file Excel [results.xlsx](file:///home/pc/CILBench-Aper/results.xlsx).
+
+### Cách chạy:
+```bash
+python generate_results.py
+```
+
+### Cấu trúc các Sheets trong `results.xlsx`:
+1. **Sheet `Tổng hợp`**:
+   - **Bảng ma trận so sánh tổng quan**: Trích xuất 2 chỉ số cốt lõi là **Average Incremental Accuracy** và **Final Accuracy** (dưới dạng $\text{mean} \pm \text{std}$ qua 3 seed [0, 1, 2]) của cả 5 biến thể trên cả 6 kịch bản.
+   - **Bảng chi tiết từng seed**: Bảng phân rã chi tiết kết quả từng seed (Seed 0, Seed 1, Seed 2, Mean, Std) cho từng kịch bản.
+2. **Các Sheet kịch bản riêng biệt**:
+   - `CIFAR-100` (10 tasks, 10 cls)
+   - `CUB-200` (10 tasks, 20 cls)
+   - `ImageNet-R (10T)` (10 tasks, 20 cls)
+   - `ImageNet-A` (20 tasks, 10 cls)
+   - `ImageNet-R (20T)` (20 tasks, 10 cls)
+   - `ImageNet-R (40T)` (40 tasks, 5 cls)
+
+Trong mỗi sheet kịch bản:
+- Cột đầu tiên là danh sách **5 phương pháp Aper**.
+- Mỗi task tiếp theo được tách thành 2 cột con:
+  - **Accuracy**: Độ chính xác tích lũy tại task đó (trung bình 3 seed).
+  - **Forgetting**: Mức độ quên lãng của các task đã học trước đó tính đến task hiện tại (trung bình 3 seed).
+- Đã được định dạng freeze panes, màu sắc theo phân cấp báo cáo khoa học và border rõ ràng.
